@@ -52,7 +52,7 @@ def get_dataloader_sep_folder(data_dir: str,
         x: DataLoader(image_datasets[x],
                       batch_size=batch_size,
                       shuffle=True,
-                      num_workers=8)
+                      num_workers=1)
         for x in ['Train', 'Test']
     }
     return dataloaders
@@ -93,7 +93,7 @@ def get_dataloader_single_folder(data_dir: str,
         x: DataLoader(image_datasets[x],
                       batch_size=batch_size,
                       shuffle=True,
-                      num_workers=8)
+                      num_workers=1,drop_last=True)
         for x in ['Train', 'Test']
     }
     return dataloaders
