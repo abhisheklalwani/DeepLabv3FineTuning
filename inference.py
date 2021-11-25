@@ -4,7 +4,7 @@ import cv2
 import pandas as pd
 
 # Load the trained model 
-model = torch.load('./CFExp/weights.pt')
+model = torch.load('./SmallObjectExp/checkpoint_0005_DeepLabV3_SmallObject.pt')
 model.cuda()
 # Set the model to evaluate mode
 model.eval()
@@ -14,9 +14,9 @@ df = pd.read_csv('./CFExp/log.csv')
 
 
 ino = 2
-img = cv2.imread(f'./CrackForest/Images/001.jpg')
+img = cv2.imread(f'./SmallObjectDataset/Images/0000000000.png')
 img = cv2.resize(img,(256,256)).transpose(2,0,1).reshape(1,3,256,256)
-mask = cv2.imread(f'./CrackForest/Masks/001_label.PNG')
+mask = cv2.imread(f'./SmallObjectDataset/Masks/0000000000.png')
 mask = cv2.resize(mask,(256,256))
 with torch.no_grad():
     a = model(torch.from_numpy(img).type(torch.cuda.FloatTensor)/255)
@@ -36,4 +36,4 @@ plt.subplot(133)
 plt.imshow(a['out'].cpu().detach().numpy()[0][0]>0.2)
 plt.title('Segmentation Output')
 plt.axis('off')
-plt.savefig('./CFExp/SegmentationOutput.png',bbox_inches='tight')
+plt.savefig('./SmallObjectExp/SegmentationOutput.png',bbox_inches='tight')

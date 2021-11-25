@@ -8,6 +8,7 @@ from typing import Any, Callable, Optional
 import numpy as np
 from PIL import Image
 from torchvision.datasets.vision import VisionDataset
+import torch
 
 
 class SegmentationDataset(VisionDataset):
@@ -107,12 +108,11 @@ class SegmentationDataset(VisionDataset):
             elif self.image_color_mode == "grayscale":
                 image = image.convert("L")
             mask = Image.open(mask_file)
-            if self.mask_color_mode == "rgb":
-                mask = mask.convert("RGB")
-            elif self.mask_color_mode == "grayscale":
-                mask = mask.convert("L")
             sample = {"image": image, "mask": mask}
             if self.transforms:
                 sample["image"] = self.transforms(sample["image"])
                 sample["mask"] = self.transforms(sample["mask"])
+            sample['mask']*=255
+            sample['mask'] = sample['mask'].long().squeeze()
+            sample['mask'] = torch.clamp(sample['mask'],min=0,max=2)
             return sample

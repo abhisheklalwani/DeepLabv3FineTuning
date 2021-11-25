@@ -2,6 +2,7 @@ from pathlib import Path
 
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from torchvision.transforms.functional import InterpolationMode
 
 from segdataset import SegmentationDataset
 
@@ -62,7 +63,7 @@ def get_dataloader_single_folder(data_dir: str,
                                  image_folder: str = 'Images',
                                  mask_folder: str = 'Masks',
                                  fraction: float = 0.2,
-                                 batch_size: int = 4):
+                                 batch_size: int = 2):
     """Create train and test dataloader from a single directory containing
     the image and mask folders.
 
@@ -77,7 +78,7 @@ def get_dataloader_single_folder(data_dir: str,
         dataloaders: Returns dataloaders dictionary containing the
         Train and Test dataloaders.
     """
-    data_transforms = transforms.Compose([transforms.ToTensor()])
+    data_transforms = transforms.Compose([transforms.Resize((256,256),interpolation = InterpolationMode.NEAREST),transforms.ToTensor()])
 
     image_datasets = {
         x: SegmentationDataset(data_dir,

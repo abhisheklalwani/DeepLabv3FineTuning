@@ -3,6 +3,7 @@ from pathlib import Path
 import click
 import torch
 from sklearn.metrics import f1_score, roc_auc_score
+from torch._C import device
 from torch.utils import data
 
 import datahandler
@@ -26,10 +27,14 @@ from trainer import train_model
               default=2,
               type=int,
               help="Specify the batch size for the dataloader.")
-def main(data_directory, exp_directory, epochs, batch_size):
+@click.option("--num_classes",
+              default=2,
+              type=int,
+              help="Specify the number of output classes to be segmented.")
+def main(data_directory, exp_directory, epochs, batch_size,num_classes):
     # Create the deeplabv3 resnet101 model which is pretrained on a subset
     # of COCO train2017, on the 20 categories that are present in the Pascal VOC dataset.
-    model = createDeepLabv3()
+    model = createDeepLabv3(num_classes)
     model.train()
     data_directory = Path(data_directory)
     # Create the experiment directory if not present
@@ -38,9 +43,9 @@ def main(data_directory, exp_directory, epochs, batch_size):
         exp_directory.mkdir()
 
     # Specify the loss function
-    criterion = torch.nn.MSELoss(reduction='mean')
+    criterion = torch.nn.CrossEntropyLoss()
     # Specify the optimizer with a lower learning rate
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3,momentum=0.9)
 
     # Specify the evaluation metrics
     metrics = {'f1_score': f1_score, 'auroc': roc_auc_score}
@@ -54,7 +59,9 @@ def main(data_directory, exp_directory, epochs, batch_size):
                     optimizer,
                     bpath=exp_directory,
                     metrics=metrics,
-                    num_epochs=epochs)
+                    num_epochs=epochs,
+                    exp_dir=exp_directory,
+                    num_classes=num_classes)
 
     # Save the trained model
     torch.save(model, exp_directory / 'weights.pt')

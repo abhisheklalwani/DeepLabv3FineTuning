@@ -61,3 +61,6 @@ docs/_build/
 target/
 
 SmallObjectDataset/
+SmallObjectExp/
+
+CFExp/

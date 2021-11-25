@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 
 def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
-                num_epochs):
+                num_epochs,exp_dir,num_classes):
     since = time.time()
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1e10
@@ -37,6 +37,9 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
             else:
                 model.eval()  # Set model to evaluate mode
 
+            running_loss = 0.0
+            running_iou_means = []
+
             # Iterate over data.
             for sample in tqdm(iter(dataloaders[phase])):
                 inputs = sample['image'].to(device)
@@ -46,18 +49,10 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
 
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'Train'):
-                    outputs = model(inputs)
-                    loss = criterion(outputs['out'], masks)
-                    y_pred = outputs['out'].data.cpu().numpy().ravel()
-                    y_true = masks.data.cpu().numpy().ravel()
-                    for name, metric in metrics.items():
-                        if name == 'f1_score':
-                            # Use a classification threshold of 0.1
-                            batchsummary[f'{phase}_{name}'].append(
-                                metric(y_true > 0, y_pred > 0.1))
-                        else:
-                            batchsummary[f'{phase}_{name}'].append(
-                                metric(y_true.astype('uint8'), y_pred))
+                    outputs = model(inputs)['out']
+                    loss = criterion(outputs, masks)
+
+                    _, preds = torch.max(outputs, 1)
 
                     # backward + optimize only if in training phase
                     if phase == 'Train':
@@ -65,8 +60,18 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
                         optimizer.step()
             batchsummary['epoch'] = epoch
             epoch_loss = loss
-            batchsummary[f'{phase}_loss'] = epoch_loss.item()
-            print('{} Loss: {:.4f}'.format(phase, loss))
+
+            iou_mean = iou(preds, masks, num_classes).mean()
+            running_loss += loss.item() * inputs.size(0)
+            running_iou_means.append(iou_mean)
+
+            epoch_loss = running_loss / len(dataloaders[phase].dataset)
+            if running_iou_means is not None:
+                epoch_acc = np.array(running_iou_means).mean()
+            else:
+                epoch_acc = 0.
+            batchsummary[f'{phase}_loss'] = epoch_loss
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
         for field in fieldnames[3:]:
             batchsummary[field] = np.mean(batchsummary[field])
         print(batchsummary)
@@ -77,6 +82,10 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
             if phase == 'Test' and loss < best_loss:
                 best_loss = loss
                 best_model_wts = copy.deepcopy(model.state_dict())
+        if 0 == epoch%5:
+            current_model_path = os.path.join(exp_dir, f"checkpoint_{epoch:04}_DeepLabV3_SmallObject.pt")
+            print(f"Save current model : {current_model_path}")
+            torch.save(model, current_model_path)
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
@@ -86,3 +95,19 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
+
+def iou(pred, target, n_classes = 3):
+  ious = []
+  pred = pred.view(-1)
+  target = target.view(-1)
+
+  # Ignore IoU for background class ("0")
+  for cls in range(1, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
+    pred_inds = pred == cls
+    target_inds = target == cls
+    intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
+    union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - intersection
+    if union > 0:
+        ious.append(float(intersection) / float(max(union, 1)))
+
+  return np.array(ious)
