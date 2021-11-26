@@ -78,7 +78,13 @@ def get_dataloader_single_folder(data_dir: str,
         dataloaders: Returns dataloaders dictionary containing the
         Train and Test dataloaders.
     """
-    data_transforms = transforms.Compose([transforms.Resize((256,256),interpolation = InterpolationMode.NEAREST),transforms.ToTensor()])
+    data_transforms = transforms.Compose([
+                                        transforms.Resize((256,256),interpolation = InterpolationMode.NEAREST),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+    mask_transforms = transforms.Compose([
+                                        transforms.Resize((256,256),interpolation = InterpolationMode.NEAREST),
+                                        transforms.ToTensor()])
 
     image_datasets = {
         x: SegmentationDataset(data_dir,
@@ -87,7 +93,8 @@ def get_dataloader_single_folder(data_dir: str,
                                seed=100,
                                fraction=fraction,
                                subset=x,
-                               transforms=data_transforms)
+                               transforms=data_transforms,
+                               mask_transforms=mask_transforms)
         for x in ['Train', 'Test']
     }
     dataloaders = {

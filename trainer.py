@@ -5,6 +5,8 @@ import time
 
 import numpy as np
 import torch
+from torch.functional import _return_counts
+from torch.nn.modules.loss import CrossEntropyLoss
 from tqdm import tqdm
 
 
@@ -51,7 +53,7 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
                 with torch.set_grad_enabled(phase == 'Train'):
                     outputs = model(inputs)['out']
                     loss = criterion(outputs, masks)
-
+                    #print(torch.unique(masks,return_counts=True))
                     _, preds = torch.max(outputs, 1)
 
                     # backward + optimize only if in training phase
@@ -74,7 +76,6 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
         for field in fieldnames[3:]:
             batchsummary[field] = np.mean(batchsummary[field])
-        print(batchsummary)
         with open(os.path.join(bpath, 'log.csv'), 'a', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writerow(batchsummary)

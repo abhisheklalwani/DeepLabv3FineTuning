@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 from PIL import Image
+from torchvision.transforms.functional import InterpolationMode
 from torchvision.datasets.vision import VisionDataset
 import torch
 
@@ -21,6 +22,7 @@ class SegmentationDataset(VisionDataset):
                  image_folder: str,
                  mask_folder: str,
                  transforms: Optional[Callable] = None,
+                 mask_transforms: Optional[Callable] = None,
                  seed: int = None,
                  fraction: float = None,
                  subset: str = None,
@@ -65,6 +67,7 @@ class SegmentationDataset(VisionDataset):
 
         self.image_color_mode = image_color_mode
         self.mask_color_mode = mask_color_mode
+        self.mask_transforms = mask_transforms
 
         if not fraction:
             self.image_names = sorted(image_folder_path.glob("*"))
@@ -111,7 +114,7 @@ class SegmentationDataset(VisionDataset):
             sample = {"image": image, "mask": mask}
             if self.transforms:
                 sample["image"] = self.transforms(sample["image"])
-                sample["mask"] = self.transforms(sample["mask"])
+                sample["mask"] = self.mask_transforms(sample["mask"])
             sample['mask']*=255
             sample['mask'] = sample['mask'].long().squeeze()
             sample['mask'] = torch.clamp(sample['mask'],min=0,max=2)

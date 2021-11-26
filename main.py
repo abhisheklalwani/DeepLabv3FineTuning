@@ -20,7 +20,7 @@ from trainer import train_model
               help="Specify the experiment directory.")
 @click.option(
     "--epochs",
-    default=25,
+    default=100,
     type=int,
     help="Specify the number of epochs you want to run the experiment for.")
 @click.option("--batch-size",
@@ -43,7 +43,9 @@ def main(data_directory, exp_directory, epochs, batch_size,num_classes):
         exp_directory.mkdir()
 
     # Specify the loss function
-    criterion = torch.nn.CrossEntropyLoss()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    CrossEntropyweights = torch.tensor([0.005,0.005,0.99]).to(device)
+    criterion = torch.nn.CrossEntropyLoss(weight=CrossEntropyweights)
     # Specify the optimizer with a lower learning rate
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3,momentum=0.9)
 
