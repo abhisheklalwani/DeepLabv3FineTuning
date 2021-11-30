@@ -95,13 +95,13 @@ def get_dataloader_single_folder(data_dir: str,
                                subset=x,
                                transforms=data_transforms,
                                mask_transforms=mask_transforms)
-        for x in ['Train', 'Test']
+        for x in ['Train', 'Validation']
     }
     dataloaders = {
         x: DataLoader(image_datasets[x],
                       batch_size=batch_size,
                       shuffle=True,
                       num_workers=1,drop_last=True)
-        for x in ['Train', 'Test']
+        for x in ['Train', 'Validation']
     }
     return dataloaders

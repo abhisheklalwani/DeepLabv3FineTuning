@@ -43,6 +43,10 @@ To run the code with the CrackForest dataset and store the results in folder cal
 ```
 python main.py --data-directory CrackForest --exp_directory CFExp
 ```
+Inference Script
+```
+python inference.py --image_path=SmallObjectDataset/Test_Images/Images/0000000393.png --mask_path=SmallObjectDataset/Test_Images/Masks/0000000393.png --model_path=SmallObjectExp/0-25EpochsNoWeights/checkpoint_0025_DeepLabV3_SmallObject.pt --apply_transforms=True
+```
 
 The datahandler module has two functions for creating datasets fron single and different folders.
 

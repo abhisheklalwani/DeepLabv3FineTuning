@@ -2,7 +2,6 @@ from pathlib import Path
 
 import click
 import torch
-from sklearn.metrics import f1_score, roc_auc_score
 from torch._C import device
 from torch.utils import data
 
@@ -20,7 +19,7 @@ from trainer import train_model
               help="Specify the experiment directory.")
 @click.option(
     "--epochs",
-    default=100,
+    default=25,
     type=int,
     help="Specify the number of epochs you want to run the experiment for.")
 @click.option("--batch-size",
@@ -44,13 +43,12 @@ def main(data_directory, exp_directory, epochs, batch_size,num_classes):
 
     # Specify the loss function
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    CrossEntropyweights = torch.tensor([0.005,0.005,0.99]).to(device)
+    CrossEntropyweights = torch.tensor([0.0026,0.0044,0.993]).to(device)
     criterion = torch.nn.CrossEntropyLoss(weight=CrossEntropyweights)
     # Specify the optimizer with a lower learning rate
     optimizer = torch.optim.SGD(model.parameters(), lr=1e-3,momentum=0.9)
 
     # Specify the evaluation metrics
-    metrics = {'f1_score': f1_score, 'auroc': roc_auc_score}
 
     # Create the dataloader
     dataloaders = datahandler.get_dataloader_single_folder(
@@ -60,7 +58,6 @@ def main(data_directory, exp_directory, epochs, batch_size,num_classes):
                     dataloaders,
                     optimizer,
                     bpath=exp_directory,
-                    metrics=metrics,
                     num_epochs=epochs,
                     exp_dir=exp_directory,
                     num_classes=num_classes)

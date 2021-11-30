@@ -10,7 +10,7 @@ from torch.nn.modules.loss import CrossEntropyLoss
 from tqdm import tqdm
 
 
-def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
+def train_model(model, criterion, dataloaders, optimizer, bpath,
                 num_epochs,exp_dir,num_classes):
     since = time.time()
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -19,9 +19,7 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     # Initialize the log file for training and testing loss and metrics
-    fieldnames = ['epoch', 'Train_loss', 'Test_loss'] + \
-        [f'Train_{m}' for m in metrics.keys()] + \
-        [f'Test_{m}' for m in metrics.keys()]
+    fieldnames = ['epoch', 'Train_loss', 'Validation_loss']
     with open(os.path.join(bpath, 'log.csv'), 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -33,7 +31,7 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
         # Initialize batch summary
         batchsummary = {a: [0] for a in fieldnames}
 
-        for phase in ['Train', 'Test']:
+        for phase in ['Train', 'Validation']:
             if phase == 'Train':
                 model.train()  # Set model to training mode
             else:
@@ -80,7 +78,7 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writerow(batchsummary)
             # deep copy the model
-            if phase == 'Test' and loss < best_loss:
+            if phase == 'Validation' and loss < best_loss:
                 best_loss = loss
                 best_model_wts = copy.deepcopy(model.state_dict())
         if 0 == epoch%5:
@@ -88,10 +86,14 @@ def train_model(model, criterion, dataloaders, optimizer, metrics, bpath,
             print(f"Save current model : {current_model_path}")
             torch.save(model, current_model_path)
 
+    current_model_path = os.path.join(exp_dir, f"best_weights.pt")
+    print(f"Saving Best Model")
+    model.load_state_dict(best_model_wts)
+    torch.save(model, current_model_path)
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
-    print('Lowest Loss: {:4f}'.format(best_loss))
+    print('Lowest Validation Loss: {:4f}'.format(best_loss))
 
     # load best model weights
     model.load_state_dict(best_model_wts)

@@ -36,16 +36,16 @@ class SegmentationDataset(VisionDataset):
             transforms (Optional[Callable], optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.ToTensor`` for images. Defaults to None.
-            seed (int, optional): Specify a seed for the train and test split for reproducible results. Defaults to None.
+            seed (int, optional): Specify a seed for the train and Validation split for reproducible results. Defaults to None.
             fraction (float, optional): A float value from 0 to 1 which specifies the validation split fraction. Defaults to None.
-            subset (str, optional): 'Train' or 'Test' to select the appropriate set. Defaults to None.
+            subset (str, optional): 'Train' or 'Validation' to select the appropriate set. Defaults to None.
             image_color_mode (str, optional): 'rgb' or 'grayscale'. Defaults to 'rgb'.
             mask_color_mode (str, optional): 'rgb' or 'grayscale'. Defaults to 'grayscale'.
 
         Raises:
             OSError: If image folder doesn't exist in root.
             OSError: If mask folder doesn't exist in root.
-            ValueError: If subset is not either 'Train' or 'Test'
+            ValueError: If subset is not either 'Train' or 'Validation'
             ValueError: If image_color_mode and mask_color_mode are either 'rgb' or 'grayscale'
         """
         super().__init__(root, transforms)
@@ -73,9 +73,9 @@ class SegmentationDataset(VisionDataset):
             self.image_names = sorted(image_folder_path.glob("*"))
             self.mask_names = sorted(mask_folder_path.glob("*"))
         else:
-            if subset not in ["Train", "Test"]:
+            if subset not in ["Train", "Validation"]:
                 raise (ValueError(
-                    f"{subset} is not a valid input. Acceptable values are Train and Test."
+                    f"{subset} is not a valid input. Acceptable values are Train and Validation."
                 ))
             self.fraction = fraction
             self.image_list = np.array(sorted(image_folder_path.glob("*")))
